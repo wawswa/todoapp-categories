@@ -1,0 +1,10 @@
+{
+    "buildCommand": "pnpm build",
+    "outputDirectory": ".vercel/output",
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/"
+        }
+    ]
+}
