@@ -50,7 +50,7 @@ export function TodoForm({
   useEffect(() => {
     if (todo) {
       setTitle(todo.title)
-      setDescription(todo.description || '')
+      setDescription(todo.description ?? '')
       setDueDate(
         todo.due_date
           ? new Date(todo.due_date).toISOString().split('T')[0]

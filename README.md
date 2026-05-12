@@ -68,16 +68,16 @@ pnpm run dev
 
 ### Commands
 
-| Command | Description |
-|---------|-------------|
-| `pnpm install` | Install dependencies |
-| `pnpm run dev` | Start development server |
-| `pnpm run build` | Build for production |
-| `pnpm run preview` | Preview production build |
-| `pnpm run lint` | Run ESLint |
-| `pnpm run format` | Format code with Prettier |
-| `pnpm run check` | Check code formatting |
-| `pnpm run test` | Run tests with Vitest |
+| Command            | Description                       |
+| ------------------ | --------------------------------- |
+| `pnpm install`     | Install dependencies              |
+| `pnpm run dev`     | Start development server          |
+| `pnpm run build`   | Build for production              |
+| `pnpm run preview` | Preview production build          |
+| `pnpm run lint`    | Run ESLint                        |
+| `pnpm run format`  | Format code with Prettier         |
+| `pnpm run check`   | Check code formatting             |
+| `pnpm run test`    | Run tests with Vitest             |
 | `pnpm run migrate` | Run database migrations with Neon |
 
 ## Database Schema

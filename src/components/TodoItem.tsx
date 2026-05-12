@@ -31,6 +31,18 @@ export function TodoItem({
       })
     : null
 
+  const handleEdit = () => onEdit(todo)
+
+  const handleDelete = () => {
+    console.log(
+      '[TodoItem] handleDelete todo.id:',
+      todo.id,
+      'typeof:',
+      typeof todo.id,
+    )
+    onDelete(todo.id)
+  }
+
   return (
     <Card
       className={`p-4 transition-all ${todo.status === 'completed' ? 'opacity-60' : ''}`}
@@ -99,7 +111,7 @@ export function TodoItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onEdit(todo)}
+            onClick={handleEdit}
             className="h-8 w-8"
           >
             <Edit2 className="w-4 h-4" />
@@ -107,7 +119,7 @@ export function TodoItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onDelete(todo.id)}
+            onClick={handleDelete}
             className="h-8 w-8 text-red-500 hover:text-red-600"
           >
             <Trash2 className="w-4 h-4" />

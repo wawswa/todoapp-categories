@@ -17,7 +17,12 @@ import {
   toggleTodoStatus,
   createCategory,
 } from '#/routes/api/-todos'
-import type { Todo, CreateTodoInput, UpdateTodoInput, Category } from '#/lib/types'
+import type {
+  Todo,
+  CreateTodoInput,
+  UpdateTodoInput,
+  Category,
+} from '#/lib/types'
 
 export const Route = createFileRoute('/')({
   validateSearch: (search: Record<string, unknown>) => {
@@ -63,6 +68,7 @@ async function updateTodoFn(data: UpdateTodoInput & { id: number }) {
 }
 
 async function deleteTodoFn(id: number) {
+  console.log('[deleteTodoFn] Calling deleteTodo with id:', id)
   return deleteTodo({ data: { id } })
 }
 
@@ -70,7 +76,11 @@ async function toggleTodoFn(id: number, status: 'pending' | 'completed') {
   return toggleTodoStatus({ data: { id, status } })
 }
 
-async function createCategoryFn(data: { name: string; color: string; icon: string }) {
+async function createCategoryFn(data: {
+  name: string
+  color: string
+  icon: string
+}) {
   return createCategory({ data })
 }
 
@@ -94,12 +104,18 @@ function Home() {
   }, [searchParams.search])
 
   const todosQuery = useQuery({
-    queryKey: ['todos', searchParams.categoryId, searchParams.priority, localSearch],
-    queryFn: () => getTodosFn({
-      categoryId: searchParams.categoryId ?? null,
-      priority: searchParams.priority ?? null,
-      search: localSearch,
-    }),
+    queryKey: [
+      'todos',
+      searchParams.categoryId,
+      searchParams.priority,
+      localSearch,
+    ],
+    queryFn: () =>
+      getTodosFn({
+        categoryId: searchParams.categoryId ?? null,
+        priority: searchParams.priority ?? null,
+        search: localSearch,
+      }),
     retry: 2,
     retryDelay: 2000,
   })
@@ -133,16 +149,19 @@ function Home() {
   const deleteMutation = useMutation({
     mutationFn: deleteTodoFn,
     onSuccess: () => {
+      console.log('[deleteMutation] Success')
       queryClient.invalidateQueries({ queryKey: ['todos'] })
       setError(null)
     },
     onError: (err: Error) => {
+      console.log('[deleteMutation] Error:', err.message)
       setError(err.message || 'Failed to delete todo')
     },
   })
 
   const toggleMutation = useMutation({
-    mutationFn: (data: { id: number; status: 'pending' | 'completed' }) => toggleTodoFn(data.id, data.status),
+    mutationFn: (data: { id: number; status: 'pending' | 'completed' }) =>
+      toggleTodoFn(data.id, data.status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
       setError(null)
@@ -155,7 +174,7 @@ function Home() {
   const addCategoryMutation = useMutation({
     mutationFn: createCategoryFn,
     onSuccess: (newCategory) => {
-      setLocalCategories(prev => [...prev, newCategory])
+      setLocalCategories((prev) => [...prev, newCategory])
       setError(null)
     },
     onError: (err: Error) => {
@@ -172,7 +191,11 @@ function Home() {
         } else {
           params.delete('search')
         }
-        window.history.replaceState(null, '', `${window.location.pathname}?${params.toString() || ''}`)
+        window.history.replaceState(
+          null,
+          '',
+          `${window.location.pathname}?${params.toString() || ''}`,
+        )
       }
     }, 300)
     return () => clearTimeout(timer)
@@ -187,6 +210,11 @@ function Home() {
   }
 
   const handleEditTodo = (todo: Todo) => {
+    console.log('[handleEditTodo] todo:', todo, 'id:', todo.id)
+    if (!todo.id) {
+      console.error('Invalid todo object:', todo)
+      return
+    }
     setEditingTodo(todo)
     setIsFormOpen(true)
   }
@@ -221,7 +249,11 @@ function Home() {
     } else {
       params.set('categoryId', String(categoryId))
     }
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString() || ''}`)
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}?${params.toString() || ''}`,
+    )
   }
 
   const handlePriorityChange = (priority: string) => {
@@ -231,7 +263,11 @@ function Home() {
     } else {
       params.set('priority', priority)
     }
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString() || ''}`)
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}?${params.toString() || ''}`,
+    )
   }
 
   return (
@@ -259,7 +295,12 @@ function Home() {
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex justify-between items-center">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-sm underline">Dismiss</button>
+            <button
+              onClick={() => setError(null)}
+              className="text-sm underline"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
@@ -278,8 +319,12 @@ function Home() {
           </div>
         ) : todosQuery.error ? (
           <div className="text-center py-12">
-            <p className="text-red-500 text-lg mb-4">Error connecting to database</p>
-            <p className="text-gray-400 text-sm mb-4">{String(todosQuery.error)}</p>
+            <p className="text-red-500 text-lg mb-4">
+              Error connecting to database
+            </p>
+            <p className="text-gray-400 text-sm mb-4">
+              {String(todosQuery.error)}
+            </p>
             <Button variant="outline" onClick={handleRetry}>
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
@@ -289,7 +334,9 @@ function Home() {
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No todos found</p>
             <p className="text-gray-400 text-sm mt-2">
-              {localSearch || searchParams.categoryId || (searchParams.priority && searchParams.priority !== 'all')
+              {localSearch ||
+              searchParams.categoryId ||
+              (searchParams.priority && searchParams.priority !== 'all')
                 ? 'Try adjusting your filters'
                 : 'Click "Add Todo" to create your first task'}
             </p>

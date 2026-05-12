@@ -1,6 +1,14 @@
 import { useState } from 'react'
 import type { Category } from '#/lib/types'
-import { Briefcase, User, ShoppingCart, Heart, Book, LayoutList, Plus } from 'lucide-react'
+import {
+  Briefcase,
+  User,
+  ShoppingCart,
+  Heart,
+  Book,
+  LayoutList,
+  Plus,
+} from 'lucide-react'
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   briefcase: Briefcase,
