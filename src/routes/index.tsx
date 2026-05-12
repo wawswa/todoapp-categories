@@ -8,6 +8,7 @@ import { TodoItem } from '#/components/TodoItem'
 import { TodoForm } from '#/components/TodoForm'
 import { SearchBar } from '#/components/SearchBar'
 import { FilterBar } from '#/components/FilterBar'
+import { DailyProgress } from '#/components/DailyProgress'
 import {
   getCategories,
   getTodos,
@@ -16,6 +17,7 @@ import {
   deleteTodo,
   toggleTodoStatus,
   createCategory,
+  runMigrations,
 } from '#/routes/api/-todos'
 import type { Todo, CreateTodoInput, UpdateTodoInput, Category } from '#/lib/types'
 
@@ -31,10 +33,12 @@ export const Route = createFileRoute('/')({
   },
   loader: async () => {
     try {
+      // Pastikan tabel subtasks ada sebelum apapun
+      await runMigrations({ data: {} })
       const categories = await getCategories()
       return { categories }
     } catch (e) {
-      console.error('Failed to load categories:', e)
+      console.error('Failed to load:', e)
       return { categories: [] }
     }
   },
@@ -46,32 +50,13 @@ async function getTodosFn(params: {
   priority?: string | null
   search?: string
 }) {
-  const data = {
-    categoryId: params.categoryId ? String(params.categoryId) : null,
-    priority: params.priority,
-    search: params.search,
-  }
-  return getTodos({ data })
-}
-
-async function createTodoFn(data: CreateTodoInput) {
-  return createTodo({ data })
-}
-
-async function updateTodoFn(data: UpdateTodoInput & { id: number }) {
-  return updateTodo({ data })
-}
-
-async function deleteTodoFn(id: number) {
-  return deleteTodo({ data: { id } })
-}
-
-async function toggleTodoFn(id: number, status: 'pending' | 'completed') {
-  return toggleTodoStatus({ data: { id, status } })
-}
-
-async function createCategoryFn(data: { name: string; color: string; icon: string }) {
-  return createCategory({ data })
+  return getTodos({
+    data: {
+      categoryId: params.categoryId ? String(params.categoryId) : null,
+      priority: params.priority,
+      search: params.search,
+    },
+  })
 }
 
 function Home() {
@@ -95,84 +80,79 @@ function Home() {
 
   const todosQuery = useQuery({
     queryKey: ['todos', searchParams.categoryId, searchParams.priority, localSearch],
-    queryFn: () => getTodosFn({
-      categoryId: searchParams.categoryId ?? null,
-      priority: searchParams.priority ?? null,
-      search: localSearch,
-    }),
+    queryFn: () =>
+      getTodosFn({
+        categoryId: searchParams.categoryId ?? null,
+        priority: searchParams.priority ?? null,
+        search: localSearch,
+      }),
     retry: 2,
     retryDelay: 2000,
   })
 
   const createMutation = useMutation({
-    mutationFn: createTodoFn,
+    mutationFn: (data: CreateTodoInput) => createTodo({ data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
       setIsFormOpen(false)
       setEditingTodo(null)
       setError(null)
     },
-    onError: (err: Error) => {
-      setError(err.message || 'Failed to create todo')
-    },
+    onError: (err: Error) => setError(err.message || 'Failed to create todo'),
   })
 
   const updateMutation = useMutation({
-    mutationFn: updateTodoFn,
+    mutationFn: (data: UpdateTodoInput & { id: number }) => updateTodo({ data }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
       setIsFormOpen(false)
       setEditingTodo(null)
       setError(null)
     },
-    onError: (err: Error) => {
-      setError(err.message || 'Failed to update todo')
-    },
+    onError: (err: Error) => setError(err.message || 'Failed to update todo'),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: deleteTodoFn,
+    mutationFn: (id: number) => deleteTodo({ data: { id } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
       setError(null)
     },
-    onError: (err: Error) => {
-      setError(err.message || 'Failed to delete todo')
-    },
+    onError: (err: Error) => setError(err.message || 'Failed to delete todo'),
   })
 
   const toggleMutation = useMutation({
-    mutationFn: (data: { id: number; status: 'pending' | 'completed' }) => toggleTodoFn(data.id, data.status),
+    mutationFn: (d: { id: number; status: 'pending' | 'completed' }) =>
+      toggleTodoStatus({ data: d }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
       setError(null)
     },
-    onError: (err: Error) => {
-      setError(err.message || 'Failed to toggle todo')
-    },
+    onError: (err: Error) => setError(err.message || 'Failed to toggle todo'),
   })
 
   const addCategoryMutation = useMutation({
-    mutationFn: createCategoryFn,
-    onSuccess: (newCategory) => {
-      setLocalCategories(prev => [...prev, newCategory])
+    mutationFn: (data: { name: string; color: string; icon: string }) =>
+      createCategory({ data }),
+    onSuccess: (newCat) => {
+      setLocalCategories((prev) => [...prev, newCat])
       setError(null)
     },
-    onError: (err: Error) => {
-      setError(err.message || 'Failed to create category')
-    },
+    onError: (err: Error) => setError(err.message || 'Failed to create category'),
   })
 
+  // Debounced search sync ke URL
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localSearch !== searchParams.search) {
         const params = new URLSearchParams(window.location.search)
-        if (localSearch) {
-          params.set('search', localSearch)
-        } else {
-          params.delete('search')
-        }
-        window.history.replaceState(null, '', `${window.location.pathname}?${params.toString() || ''}`)
+        if (localSearch) params.set('search', localSearch)
+        else params.delete('search')
+        window.history.replaceState(
+          null,
+          '',
+          `${window.location.pathname}?${params.toString() || ''}`,
+        )
       }
     }, 300)
     return () => clearTimeout(timer)
@@ -186,52 +166,31 @@ function Home() {
     }
   }
 
-  const handleEditTodo = (todo: Todo) => {
-    setEditingTodo(todo)
-    setIsFormOpen(true)
-  }
-
-  const handleDeleteTodo = (id: number) => {
-    deleteMutation.mutate(id)
-  }
-
   const handleToggleTodo = (id: number, currentStatus: string) => {
     const newStatus = currentStatus === 'completed' ? 'pending' : 'completed'
     toggleMutation.mutate({ id, status: newStatus })
   }
 
-  const handleCloseForm = () => {
-    setIsFormOpen(false)
-    setEditingTodo(null)
-    setError(null)
-  }
-
-  const handleRetry = () => {
-    queryClient.invalidateQueries({ queryKey: ['todos'] })
-  }
-
-  const handleAddCategory = (name: string, color: string) => {
-    addCategoryMutation.mutate({ name, color, icon: 'tag' })
-  }
-
   const handleCategorySelect = (categoryId: number | null) => {
     const params = new URLSearchParams(window.location.search)
-    if (categoryId === null) {
-      params.delete('categoryId')
-    } else {
-      params.set('categoryId', String(categoryId))
-    }
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString() || ''}`)
+    if (categoryId === null) params.delete('categoryId')
+    else params.set('categoryId', String(categoryId))
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}?${params.toString() || ''}`,
+    )
   }
 
   const handlePriorityChange = (priority: string) => {
     const params = new URLSearchParams(window.location.search)
-    if (priority === 'all') {
-      params.delete('priority')
-    } else {
-      params.set('priority', priority)
-    }
-    window.history.replaceState(null, '', `${window.location.pathname}?${params.toString() || ''}`)
+    if (priority === 'all') params.delete('priority')
+    else params.set('priority', priority)
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}?${params.toString() || ''}`,
+    )
   }
 
   return (
@@ -251,19 +210,29 @@ function Home() {
       <CategoryNav
         categories={localCategories}
         selectedCategoryId={searchParams.categoryId ?? null}
-        onAddCategory={handleAddCategory}
+        onAddCategory={(name, color) =>
+          addCategoryMutation.mutate({ name, color, icon: 'tag' })
+        }
         onCategorySelect={handleCategorySelect}
       />
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 py-6 space-y-6">
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex justify-between items-center">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 flex justify-between items-center">
             <span>{error}</span>
-            <button onClick={() => setError(null)} className="text-sm underline">Dismiss</button>
+            <button onClick={() => setError(null)} className="text-sm underline">
+              Dismiss
+            </button>
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-4 mb-6">
+        {/* ── Daily Progress ── */}
+        {todosQuery.data && todosQuery.data.length > 0 && (
+          <DailyProgress todos={todosQuery.data} />
+        )}
+
+        {/* ── Filters ── */}
+        <div className="flex flex-wrap items-center gap-4">
           <SearchBar value={localSearch} onChange={setLocalSearch} />
           <FilterBar
             priorityFilter={searchParams.priority ?? 'all'}
@@ -271,6 +240,7 @@ function Home() {
           />
         </div>
 
+        {/* ── Todo list ── */}
         {todosQuery.isLoading ? (
           <div className="text-center py-12 text-gray-500">
             <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4" />
@@ -280,7 +250,10 @@ function Home() {
           <div className="text-center py-12">
             <p className="text-red-500 text-lg mb-4">Error connecting to database</p>
             <p className="text-gray-400 text-sm mb-4">{String(todosQuery.error)}</p>
-            <Button variant="outline" onClick={handleRetry}>
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['todos'] })}
+            >
               <RefreshCw className="w-4 h-4 mr-2" />
               Retry
             </Button>
@@ -289,7 +262,9 @@ function Home() {
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No todos found</p>
             <p className="text-gray-400 text-sm mt-2">
-              {localSearch || searchParams.categoryId || (searchParams.priority && searchParams.priority !== 'all')
+              {localSearch ||
+              searchParams.categoryId ||
+              (searchParams.priority && searchParams.priority !== 'all')
                 ? 'Try adjusting your filters'
                 : 'Click "Add Todo" to create your first task'}
             </p>
@@ -302,8 +277,11 @@ function Home() {
                 todo={todo}
                 categories={localCategories}
                 onToggle={(id) => handleToggleTodo(id, todo.status)}
-                onEdit={handleEditTodo}
-                onDelete={handleDeleteTodo}
+                onEdit={(t) => {
+                  setEditingTodo(t)
+                  setIsFormOpen(true)
+                }}
+                onDelete={(id) => deleteMutation.mutate(id)}
               />
             ))}
           </div>
@@ -314,7 +292,11 @@ function Home() {
         todo={editingTodo || undefined}
         categories={localCategories}
         isOpen={isFormOpen}
-        onClose={handleCloseForm}
+        onClose={() => {
+          setIsFormOpen(false)
+          setEditingTodo(null)
+          setError(null)
+        }}
         onSubmit={handleSubmitTodo}
       />
     </div>

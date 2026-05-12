@@ -9,6 +9,14 @@ export interface Category {
   created_at: Date
 }
 
+export interface Subtask {
+  id: number
+  todo_id: number
+  title: string
+  completed: boolean
+  created_at: Date
+}
+
 export interface Todo {
   id: number
   title: string
@@ -19,6 +27,7 @@ export interface Todo {
   created_at: Date
   updated_at: Date
   categories: Category[]
+  subtasks?: Subtask[]
 }
 
 export interface CreateTodoInput {
@@ -42,6 +51,17 @@ export interface CreateCategoryInput {
   name: string
   color?: string
   icon?: string
+}
+
+export interface CreateSubtaskInput {
+  todo_id: number
+  title: string
+}
+
+export interface UpdateSubtaskInput {
+  id: number
+  title?: string
+  completed?: boolean
 }
 
 export const PRIORITY_COLORS: Record<Priority, string> = {

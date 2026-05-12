@@ -1,9 +1,11 @@
-import type { Todo, Category } from '#/lib/types'
-import { PRIORITY_COLORS, PRIORITY_LABELS } from '#/lib/types'
-import { Card } from '#/components/ui/card'
-import { Button } from '#/components/ui/button'
-import { Checkbox } from '#/components/ui/checkbox'
-import { Calendar, Trash2, Edit2, Tag } from 'lucide-react'
+import { useState } from "react"
+import type { Todo, Category } from "#/lib/types"
+import { PRIORITY_COLORS, PRIORITY_LABELS } from "#/lib/types"
+import { Card } from "#/components/ui/card"
+import { Button } from "#/components/ui/button"
+import { Checkbox } from "#/components/ui/checkbox"
+import { Calendar, Trash2, Edit2, Tag, ChevronDown, ChevronUp } from "lucide-react"
+import { SubtaskList, SubtaskBadge } from "#/components/SubtaskList"
 
 interface TodoItemProps {
   todo: Todo
@@ -13,42 +15,45 @@ interface TodoItemProps {
   onDelete: (id: number) => void
 }
 
-export function TodoItem({
-  todo,
-  categories,
-  onToggle,
-  onEdit,
-  onDelete,
-}: TodoItemProps) {
+export function TodoItem({ todo, categories, onToggle, onEdit, onDelete }: TodoItemProps) {
+  const [showSubtasks, setShowSubtasks] = useState(false)
+
   const isOverdue =
     todo.due_date &&
     new Date(todo.due_date) < new Date() &&
-    todo.status === 'pending'
+    todo.status === "pending"
+
   const formattedDate = todo.due_date
-    ? new Date(todo.due_date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
+    ? new Date(todo.due_date).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
       })
     : null
 
+  const subtasks = todo.subtasks ?? []
+
   return (
     <Card
-      className={`p-4 transition-all ${todo.status === 'completed' ? 'opacity-60' : ''}`}
+      className={`p-4 transition-all ${todo.status === "completed" ? "opacity-60" : ""}`}
     >
       <div className="flex items-start gap-3">
+        {/* Checkbox toggle */}
         <div
           className="mt-0.5 cursor-pointer p-0.5 rounded hover:bg-gray-100 transition-colors"
           onClick={() => onToggle(todo.id)}
           role="checkbox"
-          aria-checked={todo.status === 'completed'}
+          aria-checked={todo.status === "completed"}
         >
-          <Checkbox checked={todo.status === 'completed'} />
+          <Checkbox checked={todo.status === "completed"} />
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          {/* Title + priority */}
+          <div className="flex items-center gap-2 flex-wrap">
             <span
-              className={`font-medium ${todo.status === 'completed' ? 'line-through text-gray-500' : ''}`}
+              className={`font-medium ${
+                todo.status === "completed" ? "line-through text-gray-500" : ""
+              }`}
             >
               {todo.title}
             </span>
@@ -57,24 +62,30 @@ export function TodoItem({
             >
               {PRIORITY_LABELS[todo.priority]}
             </span>
+            {/* Subtask badge — tampil di list view */}
+            {subtasks.length > 0 && !showSubtasks && (
+              <SubtaskBadge subtasks={subtasks} />
+            )}
           </div>
 
+          {/* Description */}
           {todo.description && (
             <p className="mt-1 text-sm text-gray-500 line-clamp-2">
               {todo.description}
             </p>
           )}
 
+          {/* Meta row: due date + categories */}
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             {formattedDate && (
               <span
                 className={`flex items-center gap-1 text-xs ${
-                  isOverdue ? 'text-red-600' : 'text-gray-500'
+                  isOverdue ? "text-red-600" : "text-gray-500"
                 }`}
               >
                 <Calendar className="w-3 h-3" />
                 {formattedDate}
-                {isOverdue && ' (overdue)'}
+                {isOverdue && " (overdue)"}
               </span>
             )}
 
@@ -85,7 +96,7 @@ export function TodoItem({
                   <span
                     key={c.id}
                     className="px-1.5 py-0.5 rounded text-xs"
-                    style={{ backgroundColor: c.color + '20', color: c.color }}
+                    style={{ backgroundColor: c.color + "20", color: c.color }}
                   >
                     {c.name}
                   </span>
@@ -93,9 +104,35 @@ export function TodoItem({
               </span>
             )}
           </div>
+
+          {/* Toggle subtask panel */}
+          <button
+            onClick={() => setShowSubtasks((v) => !v)}
+            className="mt-2 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showSubtasks ? (
+              <ChevronUp className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+            {showSubtasks
+              ? "Sembunyikan subtasks"
+              : `Subtasks${subtasks.length > 0 ? ` (${subtasks.length})` : ""}`}
+          </button>
+
+          {/* Subtask panel — terintegrasi backend */}
+          {showSubtasks && (
+            <div className="mt-3 pl-1 border-l-2 border-muted">
+              <SubtaskList
+                todoId={todo.id}
+                readonly={todo.status === "completed"}
+              />
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-1">
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0">
           <Button
             variant="ghost"
             size="icon"
