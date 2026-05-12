@@ -24,9 +24,7 @@ Table todo_categories {
   todo_id int [ref: > todos.id]
   category_id int [ref: > categories.id]
 
-  pk: (todo_id, category_id)
+  indexes {
+    (todo_id, category_id) [pk]
+  }
 }
-
-// Indexes for performance
-Ref: todo_categories.todo_id < todos.id
-Ref: todo_categories.category_id < categories.id
