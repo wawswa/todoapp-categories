@@ -78,7 +78,7 @@ pnpm run dev
 | `pnpm run format` | Format code with Prettier |
 | `pnpm run check` | Check code formatting |
 | `pnpm run test` | Run tests with Vitest |
-| `pnpm run migrate` | Run database migrations |
+| `pnpm run migrate` | Run database migrations with Neon |
 
 ## Database Schema
 
