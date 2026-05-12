@@ -1,0 +1,32 @@
+// Categories
+Table categories {
+  id int [pk]
+  name varchar(100) [not null]
+  color varchar(7) [default: '#3B82F6']
+  icon varchar(50)
+  created_at timestamp [default: 'now()']
+}
+
+// Todos with priority and due date
+Table todos {
+  id int [pk]
+  title varchar(255) [not null]
+  description text
+  due_date date
+  priority varchar(10) [not null, default: 'medium']
+  status varchar(20) [not null, default: 'pending']
+  created_at timestamp [default: 'now()']
+  updated_at timestamp [default: 'now()']
+}
+
+// Junction table for many-to-many relationship
+Table todo_categories {
+  todo_id int [ref: > todos.id]
+  category_id int [ref: > categories.id]
+
+  pk: (todo_id, category_id)
+}
+
+// Indexes for performance
+Ref: todo_categories.todo_id < todos.id
+Ref: todo_categories.category_id < categories.id
