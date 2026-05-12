@@ -13,7 +13,7 @@ const config = defineConfig({
     devtools(),
     tailwindcss(),
     tanstackStart(),
-    nitro({ preset: 'vercel' }),
+    nitro({ preset: 'netlify' }),
     viteReact(),
   ],
 })
