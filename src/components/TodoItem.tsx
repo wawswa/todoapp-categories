@@ -34,13 +34,10 @@ export function TodoItem({
   const handleEdit = () => onEdit(todo)
 
   const handleDelete = () => {
-    console.log(
-      '[TodoItem] handleDelete todo.id:',
-      todo.id,
-      'typeof:',
-      typeof todo.id,
-    )
-    onDelete(todo.id)
+    const confirmDelete = window.confirm('Yakin mau hapus todo ini?')
+    if (confirmDelete) {
+      onDelete(todo.id)
+    }
   }
 
   return (

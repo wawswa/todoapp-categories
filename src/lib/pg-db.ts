@@ -77,31 +77,37 @@ export async function getCategories(): Promise<Category[]> {
      FROM categories c
      LEFT JOIN todos t ON t.category_id = c.id
      GROUP BY c.id
-     ORDER BY c.created_at ASC`
+     ORDER BY c.created_at ASC`,
   )
   return result.rows.map(rowToCategory)
 }
 
 export async function getCategoryById(id: string): Promise<Category | null> {
-  const result = await pool.query(
-    `SELECT * FROM categories WHERE id = $1`,
-    [id]
-  )
+  const result = await pool.query(`SELECT * FROM categories WHERE id = $1`, [
+    id,
+  ])
   return result.rows[0] ? rowToCategory(result.rows[0]) : null
 }
 
-export async function createCategory(name: string, color?: string): Promise<Category> {
+export async function createCategory(
+  name: string,
+  color?: string,
+): Promise<Category> {
   const result = await pool.query(
     `INSERT INTO categories (name, color, is_default) VALUES ($1, $2, $3) RETURNING *`,
-    [name, color || null, false]
+    [name, color || null, false],
   )
   return rowToCategory(result.rows[0])
 }
 
-export async function updateCategory(id: string, name: string, color?: string): Promise<Category | null> {
+export async function updateCategory(
+  id: string,
+  name: string,
+  color?: string,
+): Promise<Category | null> {
   const result = await pool.query(
     `UPDATE categories SET name = $1, color = $2, updated_at = NOW() WHERE id = $3 RETURNING *`,
-    [name, color || null, id]
+    [name, color || null, id],
   )
   return result.rows[0] ? rowToCategory(result.rows[0]) : null
 }
@@ -109,7 +115,7 @@ export async function updateCategory(id: string, name: string, color?: string): 
 export async function deleteCategory(id: string): Promise<Category | null> {
   // First move all todos to the default "Uncategorized" category
   const uncategorized = await pool.query(
-    `SELECT id FROM categories WHERE is_default = true LIMIT 1`
+    `SELECT id FROM categories WHERE is_default = true LIMIT 1`,
   )
   if (!uncategorized.rows[0]) {
     throw new Error('Default Uncategorized category not found')
@@ -118,12 +124,12 @@ export async function deleteCategory(id: string): Promise<Category | null> {
 
   await pool.query(
     `UPDATE todos SET category_id = $1, updated_at = NOW() WHERE category_id = $2`,
-    [defaultId, id]
+    [defaultId, id],
   )
 
   const result = await pool.query(
     `DELETE FROM categories WHERE id = $1 RETURNING *`,
-    [id]
+    [id],
   )
   return result.rows[0] ? rowToCategory(result.rows[0]) : null
 }
@@ -191,21 +197,28 @@ export async function createTodo(data: {
   priority: string
   dueDate?: Date | string | null
 }): Promise<Todo> {
-  const dueDate = data.dueDate ? (typeof data.dueDate === 'string' ? new Date(data.dueDate) : data.dueDate) : null
+  const dueDate = data.dueDate
+    ? typeof data.dueDate === 'string'
+      ? new Date(data.dueDate)
+      : data.dueDate
+    : null
   const result = await pool.query(
     `INSERT INTO todos (title, category_id, priority, due_date) VALUES ($1, $2, $3, $4) RETURNING *`,
-    [data.title, data.categoryId, data.priority, dueDate]
+    [data.title, data.categoryId, data.priority, dueDate],
   )
   return rowToTodo(result.rows[0])
 }
 
-export async function updateTodo(id: string, data: Partial<{
-  title: string
-  categoryId: string
-  priority: string
-  dueDate: Date | string | null
-  completed: boolean
-}>): Promise<Todo | null> {
+export async function updateTodo(
+  id: string,
+  data: Partial<{
+    title: string
+    categoryId: string
+    priority: string
+    dueDate: Date | string | null
+    completed: boolean
+  }>,
+): Promise<Todo | null> {
   const fields: string[] = []
   const params: any[] = []
   let paramIndex = 1
@@ -231,7 +244,11 @@ export async function updateTodo(id: string, data: Partial<{
     paramIndex++
   }
   if (data.dueDate !== undefined) {
-    const dueDate = data.dueDate ? (typeof data.dueDate === 'string' ? new Date(data.dueDate) : data.dueDate) : null
+    const dueDate = data.dueDate
+      ? typeof data.dueDate === 'string'
+        ? new Date(data.dueDate)
+        : data.dueDate
+      : null
     fields.push(`due_date = $${paramIndex}`)
     params.push(dueDate)
     paramIndex++
@@ -251,7 +268,7 @@ export async function updateTodo(id: string, data: Partial<{
 export async function toggleTodoCompletion(id: string): Promise<Todo | null> {
   const result = await pool.query(
     `UPDATE todos SET completed = NOT completed, updated_at = NOW() WHERE id = $1 RETURNING *`,
-    [id]
+    [id],
   )
   return result.rows[0] ? rowToTodo(result.rows[0]) : null
 }
