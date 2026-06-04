@@ -114,23 +114,31 @@ export function CategoryNav({
                       borderColor: isSelected ? category.color : undefined,
                       color: isSelected ? category.color : undefined,
                     }}
-                >
-                  {IconComponent && <IconComponent className="w-4 h-4" />}
-                  {category.name}
-                </button>
-                {isHovered && onDeleteCategory && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setDeleteConfirmId(category.id)
-                    }}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-md"
-                    title="Delete category"
                   >
-                    <X className="w-3 h-3" />
+                    {IconComponent && <IconComponent className="w-4 h-4" />}
+                    {category.name}
+                    {isHovered && onDeleteCategory && (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDeleteConfirmId(category.id)
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation()
+                            setDeleteConfirmId(category.id)
+                          }
+                        }}
+                        className="ml-2 p-0.5 bg-red-500 text-white rounded-full hover:bg-red-600"
+                        title="Delete category"
+                      >
+                        <X className="w-3 h-3" />
+                      </span>
+                    )}
                   </button>
-                )}
-              </li>
+                </li>
             )
           })}
           {onAddCategory && (
