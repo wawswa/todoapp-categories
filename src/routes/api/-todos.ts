@@ -34,11 +34,13 @@ export const createCategory = createServerFn({ method: 'POST' }).handler(
     const sql = getSql()
     const body = data as { name: string; color: string; icon: string }
 
-    if (!body.name.trim()) throw new Error('Category name is required')
+    const name = body.name.trim()
+    if (!name) throw new Error('Category name is required')
+    if (name.length < 2) throw new Error('Category name must be at least 2 characters')
 
     const result = await sql`
       INSERT INTO categories (name, color, icon) 
-      VALUES (${body.name.trim()}, ${body.color || '#3B82F6'}, ${body.icon || 'tag'}) 
+      VALUES (${name}, ${body.color || '#3B82F6'}, ${body.icon || 'tag'}) 
       RETURNING *
     `
 
@@ -113,11 +115,18 @@ export const createTodo = createServerFn({ method: 'POST' }).handler(
     const sql = getSql()
     const body = data as CreateTodoInput
 
-    if (!body.title.trim()) throw new Error('Title is required')
+    const title = body.title.trim()
+    if (!title) throw new Error('Title is required')
+    if (title.length < 3) throw new Error('Title must be at least 3 characters')
+
+    if (body.description !== undefined && body.description.trim()) {
+      const desc = body.description.trim()
+      if (desc.length < 5) throw new Error('Description must be at least 5 characters or empty')
+    }
 
     const result = await sql`
       INSERT INTO todos (title, description, due_date, priority)
-      VALUES (${body.title.trim()}, ${body.description || null}, ${body.due_date || null}, ${body.priority})
+      VALUES (${title}, ${body.description || null}, ${body.due_date || null}, ${body.priority})
       RETURNING *
     `
 
@@ -298,5 +307,19 @@ export const toggleTodoStatus = createServerFn({ method: 'POST' }).handler(
 
     if (!result[0]) throw new Error('Failed to toggle todo')
     return result[0]
+  },
+)
+
+export const deleteCategory = createServerFn({ method: 'POST' }).handler(
+  async ({ data }) => {
+    const sql = getSql()
+    const categoryId = (data as { id: number } | undefined)?.id
+
+    if (!categoryId) throw new Error('Category ID is required')
+
+    // Delete the category (will cascade delete todo_categories entries)
+    await sql`DELETE FROM categories WHERE id = ${categoryId}`
+    
+    return { success: true }
   },
 )

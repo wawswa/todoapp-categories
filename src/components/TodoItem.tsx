@@ -1,8 +1,17 @@
+import { useState } from 'react'
 import type { Todo, Category } from '#/lib/types'
 import { PRIORITY_COLORS, PRIORITY_LABELS } from '#/lib/types'
 import { Card } from '#/components/ui/card'
 import { Button } from '#/components/ui/button'
 import { Checkbox } from '#/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '#/components/ui/dialog'
 import { Calendar, Trash2, Edit2, Tag } from 'lucide-react'
 
 interface TodoItemProps {
@@ -20,10 +29,13 @@ export function TodoItem({
   onEdit,
   onDelete,
 }: TodoItemProps) {
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
   const isOverdue =
     todo.due_date &&
     new Date(todo.due_date) < new Date() &&
     todo.status === 'pending'
+  
   const formattedDate = todo.due_date
     ? new Date(todo.due_date).toLocaleDateString('en-US', {
         month: 'short',
@@ -31,30 +43,40 @@ export function TodoItem({
       })
     : null
 
+  const formattedTime = todo.due_date
+    ? new Date(todo.due_date).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null
+
   const handleEdit = () => onEdit(todo)
 
-  const handleDelete = () => {
-    const confirmDelete = window.confirm('Yakin mau hapus todo ini?')
-    if (confirmDelete) {
-      onDelete(todo.id)
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true)
+  }
+
+  const handleConfirmDelete = () => {
+    setShowDeleteConfirm(false)
+    onDelete(todo.id)
   }
 
   return (
-    <Card
-      className={`p-4 transition-all ${todo.status === 'completed' ? 'opacity-60' : ''}`}
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className="mt-0.5 cursor-pointer p-0.5 rounded hover:bg-gray-100 transition-colors"
-          onClick={() => onToggle(todo.id)}
-          role="checkbox"
-          aria-checked={todo.status === 'completed'}
-        >
-          <Checkbox checked={todo.status === 'completed'} />
-        </div>
+    <>
+      <Card
+        className={`p-4 transition-all ${todo.status === 'completed' ? 'opacity-60' : ''}`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className="mt-0.5 cursor-pointer p-0.5 rounded hover:bg-gray-100 transition-colors"
+            onClick={() => onToggle(todo.id)}
+            role="checkbox"
+            aria-checked={todo.status === 'completed'}
+          >
+            <Checkbox checked={todo.status === 'completed'} />
+          </div>
 
-        <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span
               className={`font-medium ${todo.status === 'completed' ? 'line-through text-gray-500' : ''}`}
@@ -75,7 +97,7 @@ export function TodoItem({
           )}
 
           <div className="flex items-center gap-3 mt-2 flex-wrap">
-            {formattedDate && (
+          {formattedDate && (
               <span
                 className={`flex items-center gap-1 text-xs ${
                   isOverdue ? 'text-red-600' : 'text-gray-500'
@@ -83,6 +105,7 @@ export function TodoItem({
               >
                 <Calendar className="w-3 h-3" />
                 {formattedDate}
+                {formattedTime && ` ${formattedTime}`}
                 {isOverdue && ' (overdue)'}
               </span>
             )}
@@ -116,7 +139,15 @@ export function TodoItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleDelete}
+            onClick={handleEdit}
+            className="h-8 w-8"
+          >
+            <Edit2 className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleDeleteClick}
             className="h-8 w-8 text-red-500 hover:text-red-600"
           >
             <Trash2 className="w-4 h-4" />
@@ -124,5 +155,31 @@ export function TodoItem({
         </div>
       </div>
     </Card>
+
+    <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete Todo?</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete "{todo.title}"? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleConfirmDelete}
+          >
+            Delete
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }

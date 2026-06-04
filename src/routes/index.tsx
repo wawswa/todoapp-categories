@@ -16,6 +16,7 @@ import {
   deleteTodo,
   toggleTodoStatus,
   createCategory,
+  deleteCategory,
 } from '#/routes/api/-todos'
 import type {
   Todo,
@@ -82,6 +83,10 @@ async function createCategoryFn(data: {
   icon: string
 }) {
   return createCategory({ data })
+}
+
+async function deleteCategoryFn(id: number) {
+  return deleteCategory({ data: { id } })
 }
 
 function Home() {
@@ -182,6 +187,17 @@ function Home() {
     },
   })
 
+  const deleteCategoryMutation = useMutation({
+    mutationFn: deleteCategoryFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['todos'] })
+      setError(null)
+    },
+    onError: (err: Error) => {
+      setError(err.message || 'Failed to delete category')
+    },
+  })
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localSearch !== searchParams.search) {
@@ -242,6 +258,11 @@ function Home() {
     addCategoryMutation.mutate({ name, color, icon: 'tag' })
   }
 
+  const handleDeleteCategory = (categoryId: number) => {
+    deleteCategoryMutation.mutate(categoryId)
+    setLocalCategories((prev) => prev.filter((c) => c.id !== categoryId))
+  }
+
   const handleCategorySelect = (categoryId: number | null) => {
     const params = new URLSearchParams(window.location.search)
     if (categoryId === null) {
@@ -289,6 +310,7 @@ function Home() {
         selectedCategoryId={searchParams.categoryId ?? null}
         onAddCategory={handleAddCategory}
         onCategorySelect={handleCategorySelect}
+        onDeleteCategory={handleDeleteCategory}
       />
 
       <main className="container mx-auto px-4 py-6">
