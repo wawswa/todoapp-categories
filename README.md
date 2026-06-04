@@ -1,4 +1,4 @@
-# Todo App with Categories
+# Todonut
 
 A full-stack todo application built with TanStack Start, Neon Postgres, Tailwind CSS, and Shadcn UI.
 
