@@ -17,7 +17,6 @@ import {
   toggleTodoStatus,
   createCategory,
   deleteCategory,
-  getTodoCountsByCategory,
 } from '#/routes/api/-todos'
 import type {
   Todo,
@@ -113,13 +112,6 @@ function Home() {
     setLocalSearch(searchParams.search || '')
   }, [searchParams.search])
 
-  const countsQuery = useQuery({
-    queryKey: ['todoCounts'],
-    queryFn: () => getTodoCountsByCategory(),
-    retry: 2,
-    retryDelay: 2000,
-  })
-
   const todosQuery = useQuery({
     queryKey: [
       'todos',
@@ -143,7 +135,7 @@ function Home() {
     mutationFn: createTodoFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
-      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
+
       setIsFormOpen(false)
       setEditingTodo(null)
       setError(null)
@@ -157,7 +149,7 @@ function Home() {
     mutationFn: updateTodoFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
-      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
+
       setIsFormOpen(false)
       setEditingTodo(null)
       setError(null)
@@ -172,7 +164,7 @@ function Home() {
     onSuccess: () => {
       console.log('[deleteMutation] Success')
       queryClient.invalidateQueries({ queryKey: ['todos'] })
-      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
+
       setError(null)
     },
     onError: (err: Error) => {
@@ -186,7 +178,7 @@ function Home() {
       toggleTodoFn(data.id, data.status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
-      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
+
       setError(null)
     },
     onError: (err: Error) => {
@@ -198,7 +190,7 @@ function Home() {
     mutationFn: createCategoryFn,
     onSuccess: (newCategory) => {
       setLocalCategories((prev) => [...prev, newCategory])
-      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
+
       setError(null)
     },
     onError: (err: Error) => {
@@ -210,7 +202,7 @@ function Home() {
     mutationFn: deleteCategoryFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
-      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
+
       setError(null)
     },
     onError: (err: Error) => {
@@ -347,7 +339,6 @@ function Home() {
         onCategorySelect={handleCategorySelect}
         onStatusFilter={handleStatusFilter}
         onDeleteCategory={handleDeleteCategory}
-        counts={countsQuery.data ?? undefined}
       />
 
       <main className="container mx-auto px-4 py-6">
