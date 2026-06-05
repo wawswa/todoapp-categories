@@ -76,10 +76,13 @@ export function TodoForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim()) return
+    const trimmedTitle = title.trim()
+    if (!trimmedTitle) return
+    if (trimmedTitle.length > 60) return
+    if (description.trim().length > 500) return
 
     const data = {
-      title: title.trim(),
+      title: trimmedTitle,
       description: description.trim() || undefined,
       due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
       priority,
@@ -116,8 +119,10 @@ export function TodoForm({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to be done?"
+              maxLength={60}
               required
             />
+            <p className="text-xs text-gray-400 text-right">{title.length}/60</p>
           </div>
 
           <div className="space-y-2">
@@ -127,8 +132,10 @@ export function TodoForm({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add details..."
+              maxLength={500}
               rows={3}
             />
+            <p className="text-xs text-gray-400 text-right">{description.length}/500</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

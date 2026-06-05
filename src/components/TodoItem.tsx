@@ -91,8 +91,10 @@ export function TodoItem({
           </div>
 
           {todo.description && (
-            <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-              {todo.description}
+            <p className="mt-1 text-sm text-gray-500 break-words">
+              {todo.description.length > 80
+                ? todo.description.slice(0, 80) + '...'
+                : todo.description}
             </p>
           )}
 

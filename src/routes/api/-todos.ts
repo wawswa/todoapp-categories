@@ -123,10 +123,12 @@ export const createTodo = createServerFn({ method: 'POST' }).handler(
     const title = body.title.trim()
     if (!title) throw new Error('Title is required')
     if (title.length < 3) throw new Error('Title must be at least 3 characters')
+    if (title.length > 60) throw new Error('Title must be at most 60 characters')
 
     if (body.description !== undefined && body.description.trim()) {
       const desc = body.description.trim()
       if (desc.length < 5) throw new Error('Description must be at least 5 characters or empty')
+      if (desc.length > 500) throw new Error('Description must be at most 500 characters')
     }
 
     const result = await sql`
@@ -191,6 +193,18 @@ export const updateTodo = createServerFn({ method: 'POST' }).handler(
       throw new Error(
         `Update failed: invalid id (received: ${JSON.stringify(data)})`,
       )
+    }
+
+    if (body.title !== undefined) {
+      const title = body.title.trim()
+      if (title.length < 3) throw new Error('Title must be at least 3 characters')
+      if (title.length > 60) throw new Error('Title must be at most 60 characters')
+    }
+
+    if (body.description !== undefined && body.description.trim()) {
+      const desc = body.description.trim()
+      if (desc.length < 5) throw new Error('Description must be at least 5 characters or empty')
+      if (desc.length > 500) throw new Error('Description must be at most 500 characters')
     }
 
     const updates: string[] = []
