@@ -54,6 +54,7 @@ export const getTodos = createServerFn({ method: 'GET' }).handler(
     const categoryId = getParam(data, 'categoryId')
     const priority = getParam(data, 'priority')
     const search = getParam(data, 'search')
+    const status = getParam(data, 'status')
 
     let query = `
       SELECT 
@@ -90,6 +91,10 @@ export const getTodos = createServerFn({ method: 'GET' }).handler(
     if (search) {
       const escaped = search.replace(/'/g, "''")
       conditions.push(`LOWER(t.title) LIKE '%${escaped.toLowerCase()}%'`)
+    }
+
+    if (status && status !== 'all') {
+      conditions.push(`t.status = '${status}'`)
     }
 
     if (conditions.length > 0) {
@@ -309,6 +314,42 @@ export const toggleTodoStatus = createServerFn({ method: 'POST' }).handler(
     return result[0]
   },
 )
+
+export const getTodoCountsByCategory = createServerFn({
+  method: 'GET',
+}).handler(async () => {
+  const sql = getSql()
+
+  const overall = await sql`
+    SELECT
+      COUNT(*) as total,
+      COUNT(*) FILTER (WHERE status = 'completed') as completed
+    FROM todos
+  `
+
+  const byCategory = await sql`
+    SELECT
+      c.id as category_id,
+      c.name as category_name,
+      COUNT(tc.todo_id) as total,
+      COUNT(*) FILTER (WHERE t.status = 'completed') as completed
+    FROM categories c
+    LEFT JOIN todo_categories tc ON c.id = tc.category_id
+    LEFT JOIN todos t ON tc.todo_id = t.id
+    GROUP BY c.id, c.name
+    ORDER BY c.name ASC
+  `
+
+  return {
+    overall: overall[0] as { total: number; completed: number },
+    byCategory: byCategory as {
+      category_id: number
+      category_name: string
+      total: number
+      completed: number
+    }[],
+  }
+})
 
 export const deleteCategory = createServerFn({ method: 'POST' }).handler(
   async ({ data }) => {

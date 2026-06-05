@@ -17,6 +17,7 @@ import {
   toggleTodoStatus,
   createCategory,
   deleteCategory,
+  getTodoCountsByCategory,
 } from '#/routes/api/-todos'
 import type {
   Todo,
@@ -33,6 +34,8 @@ export const Route = createFileRoute('/')({
       priority:
         typeof search.priority === 'string' ? search.priority : undefined,
       search: typeof search.search === 'string' ? search.search : undefined,
+      status:
+        typeof search.status === 'string' ? search.status : undefined,
     }
   },
   loader: async () => {
@@ -51,11 +54,13 @@ async function getTodosFn(params: {
   categoryId?: number | null
   priority?: string | null
   search?: string
+  status?: string | null
 }) {
   const data = {
     categoryId: params.categoryId ? String(params.categoryId) : null,
     priority: params.priority,
     search: params.search,
+    status: params.status,
   }
   return getTodos({ data })
 }
@@ -108,18 +113,27 @@ function Home() {
     setLocalSearch(searchParams.search || '')
   }, [searchParams.search])
 
+  const countsQuery = useQuery({
+    queryKey: ['todoCounts'],
+    queryFn: () => getTodoCountsByCategory(),
+    retry: 2,
+    retryDelay: 2000,
+  })
+
   const todosQuery = useQuery({
     queryKey: [
       'todos',
       searchParams.categoryId,
       searchParams.priority,
       localSearch,
+      searchParams.status,
     ],
     queryFn: () =>
       getTodosFn({
         categoryId: searchParams.categoryId ?? null,
         priority: searchParams.priority ?? null,
         search: localSearch,
+        status: searchParams.status ?? null,
       }),
     retry: 2,
     retryDelay: 2000,
@@ -129,6 +143,7 @@ function Home() {
     mutationFn: createTodoFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
       setIsFormOpen(false)
       setEditingTodo(null)
       setError(null)
@@ -142,6 +157,7 @@ function Home() {
     mutationFn: updateTodoFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
       setIsFormOpen(false)
       setEditingTodo(null)
       setError(null)
@@ -156,6 +172,7 @@ function Home() {
     onSuccess: () => {
       console.log('[deleteMutation] Success')
       queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
       setError(null)
     },
     onError: (err: Error) => {
@@ -169,6 +186,7 @@ function Home() {
       toggleTodoFn(data.id, data.status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
       setError(null)
     },
     onError: (err: Error) => {
@@ -180,6 +198,7 @@ function Home() {
     mutationFn: createCategoryFn,
     onSuccess: (newCategory) => {
       setLocalCategories((prev) => [...prev, newCategory])
+      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
       setError(null)
     },
     onError: (err: Error) => {
@@ -191,6 +210,7 @@ function Home() {
     mutationFn: deleteCategoryFn,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['todos'] })
+      queryClient.invalidateQueries({ queryKey: ['todoCounts'] })
       setError(null)
     },
     onError: (err: Error) => {
@@ -291,6 +311,20 @@ function Home() {
     )
   }
 
+  const handleStatusFilter = (status: string | null) => {
+    const params = new URLSearchParams(window.location.search)
+    if (status === null) {
+      params.delete('status')
+    } else {
+      params.set('status', status)
+    }
+    window.history.replaceState(
+      null,
+      '',
+      `${window.location.pathname}?${params.toString() || ''}`,
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
@@ -308,9 +342,12 @@ function Home() {
       <CategoryNav
         categories={localCategories}
         selectedCategoryId={searchParams.categoryId ?? null}
+        selectedStatus={searchParams.status ?? null}
         onAddCategory={handleAddCategory}
         onCategorySelect={handleCategorySelect}
+        onStatusFilter={handleStatusFilter}
         onDeleteCategory={handleDeleteCategory}
+        counts={countsQuery.data ?? undefined}
       />
 
       <main className="container mx-auto px-4 py-6">

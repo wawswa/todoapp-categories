@@ -32,17 +32,31 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 interface CategoryNavProps {
   categories: Category[]
   selectedCategoryId: number | null
+  selectedStatus?: string | null
   onAddCategory?: (name: string, color: string) => void
   onCategorySelect?: (categoryId: number | null) => void
+  onStatusFilter?: (status: string | null) => void
   onDeleteCategory?: (categoryId: number) => void
+  counts?: {
+    overall: { total: number; completed: number }
+    byCategory: {
+      category_id: number
+      category_name: string
+      total: number
+      completed: number
+    }[]
+  }
 }
 
 export function CategoryNav({
   categories,
   selectedCategoryId,
   onAddCategory,
-  onCategorySelect,
+        onCategorySelect,
+  onStatusFilter,
   onDeleteCategory,
+  counts,
+  selectedStatus,
 }: CategoryNavProps) {
   const [isAdding, setIsAdding] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -90,6 +104,11 @@ export function CategoryNav({
               >
                 <LayoutList className="w-4 h-4" />
                 All
+                {counts && (
+                  <span className="ml-1.5 text-xs text-gray-400">
+                    {counts.overall.completed}/{counts.overall.total}
+                  </span>
+                )}
               </button>
             </li>
             {categories.map((category) => {
@@ -117,6 +136,16 @@ export function CategoryNav({
                   >
                     {IconComponent && <IconComponent className="w-4 h-4" />}
                     {category.name}
+                    {(() => {
+                      const catCount = counts?.byCategory.find(
+                        (c) => c.category_id === category.id,
+                      )
+                      return catCount ? (
+                        <span className="ml-1.5 text-xs text-gray-400">
+                          {catCount.completed}/{catCount.total}
+                        </span>
+                      ) : null
+                    })()}
                     {isHovered && onDeleteCategory && (
                       <span
                         onClick={(e) => {
@@ -133,6 +162,32 @@ export function CategoryNav({
                 </li>
             )
           })}
+          {onStatusFilter && (
+            <li>
+              <button
+                onClick={() =>
+                  onStatusFilter(
+                    selectedStatus === 'completed' ? null : 'completed',
+                  )
+                }
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                  selectedStatus === 'completed'
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Completed
+                {counts && (
+                  <span className="ml-1.5 text-xs text-gray-400">
+                    {counts.overall.completed}
+                  </span>
+                )}
+              </button>
+            </li>
+          )}
           {onAddCategory && (
             <li>
               {isAdding ? (
