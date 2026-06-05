@@ -309,6 +309,8 @@ function Home() {
       params.delete('status')
     } else {
       params.set('status', status)
+      // Clear category filter so "Completed" shows all completed todos
+      params.delete('categoryId')
     }
     window.history.replaceState(
       null,
