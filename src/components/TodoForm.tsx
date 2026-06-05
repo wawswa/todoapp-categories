@@ -47,14 +47,21 @@ export function TodoForm({
   const [priority, setPriority] = useState<Priority>('medium')
   const [selectedCategories, setSelectedCategories] = useState<number[]>([])
 
+  function toLocalDatetime(date: Date) {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    const h = String(date.getHours()).padStart(2, '0')
+    const min = String(date.getMinutes()).padStart(2, '0')
+    return `${y}-${m}-${d}T${h}:${min}`
+  }
+
   useEffect(() => {
     if (todo) {
       setTitle(todo.title)
       setDescription(todo.description ?? '')
       setDueDate(
-        todo.due_date
-          ? new Date(todo.due_date).toISOString().split('T')[0]
-          : '',
+        todo.due_date ? toLocalDatetime(new Date(todo.due_date)) : '',
       )
       setPriority(todo.priority)
       setSelectedCategories(todo.categories.map((c) => c.id))
@@ -74,7 +81,7 @@ export function TodoForm({
     const data = {
       title: title.trim(),
       description: description.trim() || undefined,
-      due_date: dueDate || undefined,
+      due_date: dueDate ? new Date(dueDate).toISOString() : undefined,
       priority,
       category_ids: selectedCategories.length > 0 ? selectedCategories : [],
     }
@@ -129,7 +136,7 @@ export function TodoForm({
               <Label htmlFor="dueDate">Due Date</Label>
               <Input
                 id="dueDate"
-                type="date"
+                type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />

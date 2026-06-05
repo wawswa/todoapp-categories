@@ -13,3 +13,6 @@ __unconfig*
 todos.json
 .vercel
 .netlify
+Dockerfile
+ingress.yaml
+todoapp.yaml

@@ -13,7 +13,7 @@ const config = defineConfig({
     devtools(),
     tailwindcss(),
     tanstackStart(),
-    nitro({ preset: 'netlify' }),
+    nitro({ preset: process.env.NETLIFY ? 'netlify' : 'node-server' }),
     viteReact(),
   ],
 })

@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS todos (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    due_date DATE,
+    due_date TIMESTAMP,
     priority VARCHAR(10) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -139,14 +139,6 @@ export function TodoItem({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleEdit}
-            className="h-8 w-8"
-          >
-            <Edit2 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
             onClick={handleDeleteClick}
             className="h-8 w-8 text-red-500 hover:text-red-600"
           >

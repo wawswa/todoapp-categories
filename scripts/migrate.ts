@@ -1,6 +1,5 @@
 import { config } from 'dotenv'
-import { neon } from '@neondatabase/serverless'
-
+import { Pool } from 'pg'
 config()
 
 const connectionString = process.env.DATABASE_URL
@@ -11,8 +10,11 @@ if (!connectionString) {
 
 async function migrate() {
   console.log('Running migrations...')
-
-  const sql = neon(connectionString)
+  const pool = new Pool({ connectionString })
+  const sql = (strings: TemplateStringsArray, ...values: any[]) => {
+    const query = strings.reduce((acc, str, i) => acc + str + (values[i] ?? ''), '')
+    return pool.query(query)
+  }
 
   console.log('Creating tables...')
   await sql`CREATE TABLE IF NOT EXISTS categories (
@@ -22,30 +24,26 @@ async function migrate() {
     icon VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`
-
   await sql`CREATE TABLE IF NOT EXISTS todos (
     id SERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    due_date DATE,
+    due_date TIMESTAMP,
     priority VARCHAR(10) DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high')),
     status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'completed')),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`
-
   await sql`CREATE TABLE IF NOT EXISTS todo_categories (
     todo_id INTEGER REFERENCES todos(id) ON DELETE CASCADE,
     category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
     PRIMARY KEY (todo_id, category_id)
   )`
-
   await sql`CREATE INDEX IF NOT EXISTS idx_todos_priority ON todos(priority)`
   await sql`CREATE INDEX IF NOT EXISTS idx_todos_status ON todos(status)`
   await sql`CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date)`
   await sql`CREATE INDEX IF NOT EXISTS idx_todo_categories_todo ON todo_categories(todo_id)`
   await sql`CREATE INDEX IF NOT EXISTS idx_todo_categories_category ON todo_categories(category_id)`
-
   console.log('Tables created!')
 
   console.log('Clearing existing seed data...')
@@ -74,6 +72,7 @@ async function migrate() {
   await sql`INSERT INTO todo_categories (todo_id, category_id) VALUES (1, 1), (2, 3), (3, 4), (4, 5), (5, 2), (6, 1), (7, 4), (8, 3)`
 
   console.log('Migration complete!')
+  await pool.end()
 }
 
 migrate().catch((err) => {

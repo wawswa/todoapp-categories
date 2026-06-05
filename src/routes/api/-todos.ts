@@ -1,5 +1,5 @@
-import { neon } from '@neondatabase/serverless'
 import { createServerFn } from '@tanstack/react-start'
+import { sql } from '#/db'
 import type {
   Category,
   Todo,
@@ -10,7 +10,7 @@ import type {
 function getSql() {
   const dbUrl = process.env.DATABASE_URL
   if (!dbUrl) throw new Error('DATABASE_URL not set')
-  return neon(dbUrl)
+  return sql(dbUrl)
 }
 
 function getParam(data: any, key: string): string | null {
